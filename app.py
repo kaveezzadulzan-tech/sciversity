@@ -618,6 +618,7 @@ def init_db():
             db.session.add(Admin(username='admin', password='sciversity2024'))
             db.session.commit()
             print("✅ Default admin created: admin / sciversity2024")
+init_db()
 
 if __name__ == '__main__':
     init_db()
