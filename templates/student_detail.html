@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.name }} – Sciversity{% endblock %}
+
+{% block nav_links %}
+<a href="{{ url_for('admin_dashboard') }}" class="nav-btn">← Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mt-1">
+  <div class="col-md-4">
+    <div class="md-card text-center">
+      <div class="md-card-header header-purple justify-content-center">
+        <span class="material-icons">person</span> Student Profile
+      </div>
+      <div class="md-card-body">
+        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;font-weight:800;color:white;">
+          {{ student.name[0] }}
+        </div>
+        <div style="font-weight:700; font-size:1.1rem;">{{ student.name }}</div>
+        <div style="font-size:0.8rem; color:var(--md-muted);">{{ student.email }}</div>
+        <div style="font-size:0.78rem; color:var(--md-muted); margin-top:4px;">Student #{{ student.id }}</div>
+
+        <div style="border-top:1px solid var(--md-border); margin:16px 0;"></div>
+
+        <div class="row g-2 text-center">
+          <div class="col-6">
+            <div style="background:var(--pastel-blue); border-radius:12px; padding:10px;">
+              <div style="font-weight:800; color:#1a237e;">{{ "%.1f"|format(student.hours_logged) }}h</div>
+              <div style="font-size:0.68rem; color:#5c7a9e; text-transform:uppercase; font-weight:600;">Logged</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div style="background:var(--pastel-green); border-radius:12px; padding:10px;">
+              <div style="font-weight:800; color:#1b5e20;">{{ "%.1f"|format(student.hours_paid) }}h</div>
+              <div style="font-size:0.68rem; color:#2e7d32; text-transform:uppercase; font-weight:600;">Paid</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div style="background:var(--pastel-yellow); border-radius:12px; padding:10px;">
+              <div style="font-weight:800; color:#e65100;">{{ "%.1f"|format(student.balance) }}h</div>
+              <div style="font-size:0.68rem; color:#e65100; text-transform:uppercase; font-weight:600;">Balance</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div style="background:{{ 'var(--pastel-red)' if student.payment_due else 'var(--pastel-green)' }}; border-radius:12px; padding:10px;">
+              <div style="font-weight:800; color:{{ '#c62828' if student.payment_due else '#1b5e20' }};">
+                {{ '⚠ Due' if student.payment_due else '✓ OK' }}
+              </div>
+              <div style="font-size:0.68rem; text-transform:uppercase; font-weight:600; color:{{ '#c62828' if student.payment_due else '#2e7d32' }};">Status</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:16px 0 8px;">
+          <div style="font-size:0.78rem; color:var(--md-muted); margin-bottom:6px; font-weight:600;">CURRENT CYCLE</div>
+          <div class="hour-bar" style="height:16px;">
+            <div class="hour-fill {{ 'danger' if student.payment_due else '' }}"
+                 style="width:{{ [(student.cycle_hours/8*100),100]|min }}%;"></div>
+          </div>
+          <div style="font-size:0.75rem; color:var(--md-muted); margin-top:4px;">{{ "%.1f"|format(student.cycle_hours) }} / 8 hours</div>
+        </div>
+
+        <a href="{{ url_for('student_qr', student_id=student.id) }}" class="btn-md-primary d-block mt-3" style="border-radius:10px; text-decoration:none; text-align:center; padding:10px;" target="_blank">
+          🔲 View / Print QR Card
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="md-card mb-4">
+      <div class="md-card-header header-teal">
+        <span class="material-icons" style="font-size:1.1rem;">calendar_today</span>
+        Full Attendance History
+      </div>
+      {% if sessions %}
+      <div style="overflow-x:auto;">
+        <table class="md-table w-100">
+          <thead><tr><th>#</th><th>Date</th><th>Class Time</th><th>Duration</th></tr></thead>
+          <tbody>
+            {% for s in sessions %}
+            <tr>
+              <td style="color:var(--md-muted); font-size:0.8rem;">{{ loop.index }}</td>
+              <td style="font-weight:500;">{{ s.date.strftime('%d %b %Y') }}</td>
+              <td style="color:var(--md-muted); font-size:0.82rem;">{{ s.class_time or '—' }}</td>
+              <td>
+                <span style="background:var(--pastel-blue); color:#1a237e; border-radius:20px; padding:3px 12px; font-size:0.8rem; font-weight:600;">{{ s.duration }}h</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div style="text-align:center; color:var(--md-muted); padding:30px;">No sessions yet.</div>
+      {% endif %}
+    </div>
+
+    <div class="md-card">
+      <div class="md-card-header header-green">
+        <span class="material-icons" style="font-size:1.1rem;">payments</span>
+        Payment History
+      </div>
+      {% if payments %}
+      <div style="overflow-x:auto;">
+        <table class="md-table w-100">
+          <thead><tr><th>#</th><th>Date</th><th>Hours Block</th><th>Note</th></tr></thead>
+          <tbody>
+            {% for p in payments %}
+            <tr>
+              <td style="color:var(--md-muted); font-size:0.8rem;">{{ loop.index }}</td>
+              <td style="font-weight:500;">{{ p.paid_at.strftime('%d %b %Y') }}</td>
+              <td><span style="background:var(--pastel-green); color:#1b5e20; border-radius:20px; padding:3px 12px; font-size:0.8rem; font-weight:600;">{{ p.hours_block|int }}h block</span></td>
+              <td style="color:var(--md-muted); font-size:0.82rem;">{{ p.note or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div style="text-align:center; color:var(--md-muted); padding:30px;">No payments recorded yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

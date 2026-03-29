@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard – Sciversity{% endblock %}
+{% block nav_links %}
+<span style="color:rgba(255,255,255,0.7); font-size:0.8rem;" class="d-none d-md-inline">Admin</span>
+<a href="{{ url_for('admin_logout') }}" class="nav-btn">Logout</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-chip"><div class="num" style="color:#667eea;">{{ students|length }}</div><div class="lbl">Total Students</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-chip"><div class="num" style="color:#ef5350;">{{ students|selectattr('payment_due')|list|length }}</div><div class="lbl">Payment Due</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-chip"><div class="num" style="color:#66bb6a;">{{ students|rejectattr('payment_due')|list|length }}</div><div class="lbl">Active</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-chip"><div class="num" style="color:#ffa726;">{{ homework_list|length }}</div><div class="lbl">Homework Posts</div></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- LEFT -->
+  <div class="col-md-5 col-lg-4">
+
+    <!-- QR Scanner -->
+    <div class="md-card mb-4">
+      <div class="md-card-header header-blue"><span class="material-icons" style="font-size:1.1rem;">qr_code_scanner</span>QR Scanner</div>
+      <div class="md-card-body">
+        <label style="font-size:0.78rem;font-weight:600;color:var(--md-muted);text-transform:uppercase;">Session Duration (hours)</label>
+        <div class="d-flex gap-2 mt-1 mb-2 flex-wrap">
+          <button class="dur-btn btn-icon" onclick="setDur(1)">1h</button>
+          <button class="dur-btn btn-icon" onclick="setDur(1.5)">1.5h</button>
+          <button class="dur-btn btn-icon" onclick="setDur(2)">2h</button>
+          <button class="dur-btn btn-icon" onclick="setDur(2.5)">2.5h</button>
+          <button class="dur-btn btn-icon" onclick="setDur(3)">3h</button>
+        </div>
+        <input type="number" id="durationInput" class="md-input mb-2" value="2" min="0.25" max="12" step="0.25" placeholder="Type any duration"/>
+        <label style="font-size:0.78rem;font-weight:600;color:var(--md-muted);text-transform:uppercase;">Class Time (optional)</label>
+        <input type="text" id="classTimeInput" class="md-input mt-1 mb-1" placeholder="e.g. 4:00 PM – 6:00 PM" list="scheduleTimeOptions" autocomplete="off"/>
+        <datalist id="scheduleTimeOptions">
+          {% for sch in schedules %}
+          <option value="{{ sch.day }} · {{ sch.time_range }}">{{ sch.day }} · {{ sch.time_range }}</option>
+          {% endfor %}
+        </datalist>
+        <div id="schedSuggestions" class="mb-2" style="display:flex;flex-wrap:wrap;gap:5px;">
+          {% for sch in schedules %}
+          <button type="button" class="dur-btn btn-icon" style="font-size:0.72rem;padding:3px 10px;" onclick="document.getElementById('classTimeInput').value='{{ sch.day }} · {{ sch.time_range }}'">{{ sch.day[:3] }} {{ sch.time_range }}</button>
+          {% endfor %}
+        </div>
+        <button class="btn-md-primary w-100 mb-2" onclick="doStartScanner()">📷 &nbsp;Start Camera / Scan QR</button>
+        <div style="border-top:1px solid var(--md-border);margin:12px 0;"></div>
+        <label style="font-size:0.78rem;font-weight:600;color:var(--md-muted);text-transform:uppercase;">Manual Entry</label>
+        <div class="d-flex gap-2 mt-1">
+          <input type="number" id="manualId" class="md-input" placeholder="Student ID" style="flex:1;"/>
+          <button class="btn-md-outline" onclick="logManual()">Log</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Student -->
+    <div class="md-card mb-4">
+      <div class="md-card-header header-green"><span class="material-icons" style="font-size:1.1rem;">person_add</span>Add New Student</div>
+      <div class="md-card-body">
+        <form method="POST" action="{{ url_for('add_student') }}">
+          <div class="mb-2"><input type="text" name="name" class="md-input" placeholder="Full Name" required/></div>
+          <div class="mb-2"><input type="email" name="email" class="md-input" placeholder="Email Address" required/></div>
+          <div class="mb-3"><input type="text" name="password" class="md-input" placeholder="Login Password" required/></div>
+          <button type="submit" class="btn-md-green w-100">Add Student</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Class Schedule -->
+    <div class="md-card mb-4">
+      <div class="md-card-header header-teal"><span class="material-icons" style="font-size:1.1rem;">schedule</span>Class Schedule</div>
+      <div class="md-card-body">
+        <div id="scheduleList" class="mb-3">
+          {% for sch in schedules_data %}
+          <div class="d-flex justify-content-between align-items-center mb-2 p-2" style="background:var(--pastel-teal);border-radius:10px;" id="sch-{{ sch.id }}">
+            <div>
+              <span style="font-size:0.85rem;"><strong>{{ sch.day }}</strong> · {{ sch.time_range }}</span>
+              {% if sch.student_name %}
+              <div style="font-size:0.73rem;color:#00695c;margin-top:2px;">👤 {{ sch.student_name }}</div>
+              {% else %}
+              <div style="font-size:0.73rem;color:var(--md-muted);margin-top:2px;">Open slot</div>
+              {% endif %}
+            </div>
+            <button class="btn-icon" style="color:#c62828;" onclick="deleteSchedule({{ sch.id }})">🗑</button>
+          </div>
+          {% else %}
+          <div id="noSchedule" style="color:var(--md-muted);font-size:0.82rem;">No schedule set yet.</div>
+          {% endfor %}
+        </div>
+        <div class="d-flex gap-2 mb-2">
+          <select id="schedDay" class="md-input" style="flex:1;">
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+            <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+          </select>
+        </div>
+        <input type="text" id="schedTime" class="md-input mb-2" placeholder="e.g. 4:00 PM – 6:00 PM"/>
+        <label style="font-size:0.78rem;font-weight:600;color:var(--md-muted);text-transform:uppercase;display:block;margin-bottom:4px;">Assign to Student (optional)</label>
+        <select id="schedStudent" class="md-input mb-2">
+          <option value="">— Open slot (no specific student) —</option>
+          {% for s in students %}
+          <option value="{{ s.id }}">#{{ s.id }} · {{ s.name }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn-md-outline w-100" onclick="addSchedule()">+ Add Time Slot</button>
+      </div>
+    </div>
+
+    <!-- Post Homework -->
+    <div class="md-card">
+      <div class="md-card-header header-yellow"><span class="material-icons" style="font-size:1.1rem;">assignment</span>Post Homework</div>
+      <div class="md-card-body">
+        <form method="POST" action="{{ url_for('post_homework') }}" id="hwForm">
+          <div class="mb-2"><input type="text" name="title" class="md-input" placeholder="Task title e.g. Past Paper Q1-10" required/></div>
+          <div class="mb-3"><textarea name="description" class="md-input" rows="2" placeholder="Extra details (optional)" style="resize:none;"></textarea></div>
+          <label style="font-size:0.78rem;font-weight:600;color:var(--md-muted);text-transform:uppercase;">Send To</label>
+          <div class="d-flex gap-2 mt-1 mb-2 flex-wrap">
+            <label class="student-chip selected" id="chip-all">
+              <input type="radio" name="target" value="all" checked id="targetAll" onchange="setTarget('all')"/> All Students
+            </label>
+            <label class="student-chip" id="chip-selected">
+              <input type="radio" name="target" value="selected" id="targetSelected" onchange="setTarget('selected')"/> Select…
+            </label>
+          </div>
+          <div id="studentPickerWrap" style="display:none;" class="mb-3">
+            <div style="font-size:0.76rem;color:var(--md-muted);margin-bottom:5px;">Tap to pick students:</div>
+            <div id="studentPicker">
+              {% for s in students %}
+              <label class="student-chip" id="sc-{{ s.id }}">
+                <input type="checkbox" name="student_ids" value="{{ s.id }}" style="display:none;" onchange="syncChip(this)"/>
+                {{ s.name.split()[0] }} <span style="font-size:0.68rem;color:var(--md-muted);">#{{ s.id }}</span>
+              </label>
+              {% endfor %}
+              {% if not students %}<div style="color:var(--md-muted);font-size:0.82rem;">No students yet.</div>{% endif %}
+            </div>
+          </div>
+          <button type="submit" class="btn-md-yellow w-100">📤 &nbsp;Broadcast</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="col-md-7 col-lg-8">
+
+    <!-- Finance Master List -->
+    <div class="md-card mb-4">
+      <div class="md-card-header header-grad justify-content-between">
+        <span style="display:flex;align-items:center;gap:8px;"><span class="material-icons" style="font-size:1.1rem;">table_chart</span>Finance Master List</span>
+        <span style="background:rgba(255,255,255,0.2);border-radius:20px;padding:2px 12px;font-size:0.78rem;">{{ students|length }} students</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="md-table w-100">
+          <thead>
+            <tr><th>Student</th><th>Logged</th><th class="d-none d-md-table-cell">Paid</th><th>Cycle</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr class="{{ 'row-danger' if s.payment_due else '' }}" id="row-{{ s.id }}">
+              <td><div style="font-weight:600;">{{ s.name }}</div><div style="font-size:0.72rem;color:var(--md-muted);">#{{ s.id }}</div></td>
+              <td><span style="font-weight:700;color:var(--md-primary);">{{ "%.1f"|format(s.hours_logged) }}h</span></td>
+              <td class="d-none d-md-table-cell" style="color:var(--md-muted);">{{ "%.1f"|format(s.hours_paid) }}h</td>
+              <td style="min-width:110px;">
+                <div class="hour-bar"><div class="hour-fill {{ 'danger' if s.payment_due else '' }}" style="width:{{ [(s.cycle_hours/8*100),100]|min }}%;"></div></div>
+                <div style="font-size:0.7rem;color:var(--md-muted);margin-top:2px;">{{ "%.1f"|format(s.cycle_hours) }}/8h</div>
+              </td>
+              <td>{% if s.payment_due %}<span class="badge-due">⚠ Due</span>{% else %}<span class="badge-active">✓ Active</span>{% endif %}</td>
+              <td>
+                <div class="d-flex gap-1 flex-wrap">
+                  <a href="{{ url_for('student_detail', student_id=s.id) }}" class="btn-icon" title="View details">👁</a>
+                  <a href="{{ url_for('student_qr', student_id=s.id) }}" class="btn-icon" title="QR card" target="_blank">🔲</a>
+                  <a href="{{ url_for('student_pdf', student_id=s.id) }}" class="btn-icon" title="Download PDF log" target="_blank">📄</a>
+                  <button class="btn-icon" style="color:#2e7d32;" title="Mark 8h paid" onclick="resetPayment({{ s.id }}, '{{ s.name }}')">💰</button>
+                  <button class="btn-icon" title="Undo last session" onclick="undoSession({{ s.id }}, '{{ s.name }}')">↩</button>
+                  <button class="btn-icon" style="color:#7b1fa2;" title="Reset cycle to zero" onclick="resetCycle({{ s.id }}, '{{ s.name }}')">🔄</button>
+                  <button class="btn-icon" style="color:#c62828;" title="Delete" onclick="deleteStudent({{ s.id }}, '{{ s.name }}')">🗑</button>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center;color:var(--md-muted);padding:28px;">No students yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:8px 16px;font-size:0.72rem;color:var(--md-muted);border-top:1px solid var(--md-border);">
+        📄 PDF log &nbsp;·&nbsp; 💰 Mark paid &nbsp;·&nbsp; ↩ Undo session &nbsp;·&nbsp; 🔄 Reset cycle &nbsp;·&nbsp; 🗑 Delete
+      </div>
+    </div>
+
+    <!-- Homework -->
+    <div class="md-card">
+      <div class="md-card-header header-yellow"><span class="material-icons" style="font-size:1.1rem;">task</span>Posted Homework</div>
+      {% if homework_list %}
+        {% for hw in homework_list %}
+        <div class="hw-item" id="hw-{{ hw.id }}">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:0.88rem;">{{ hw.title }}</div>
+              {% if hw.description %}<div style="font-size:0.78rem;color:var(--md-muted);">{{ hw.description }}</div>{% endif %}
+              <div style="font-size:0.73rem;color:var(--md-muted);margin-top:3px;">
+                {{ hw.posted_at.strftime('%d %b %Y, %H:%M') }} ·
+                <span style="color:#56ab2f;font-weight:600;">{{ hw.statuses|selectattr('done')|list|length }}/{{ hw.statuses|length }} done</span>
+                {% if hw.statuses|length < students|length %} · <span style="color:#ffa726;">targeted</span>{% endif %}
+              </div>
+            </div>
+            <div class="d-flex gap-1">
+              <button class="btn-icon" onclick="viewHWStatus({{ hw.id }})" title="Status">👥</button>
+              <button class="btn-icon" style="color:#c62828;" onclick="deleteHW({{ hw.id }})">🗑</button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;color:var(--md-muted);padding:28px;font-size:0.86rem;">No homework posted yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Payment Note Modal -->
+<div class="modal fade" id="payModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:18px;border:none;">
+      <div class="modal-header" style="background:var(--pastel-green);border:none;border-radius:18px 18px 0 0;">
+        <h6 class="modal-title fw-bold" id="payModalTitle">Mark Payment</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.88rem;color:var(--md-muted);">Add a note for this payment (optional — appears in PDF log)</p>
+        <input type="text" id="payNote" class="md-input" placeholder="e.g. Cash received, Bank transfer, etc."/>
+      </div>
+      <div class="modal-footer" style="border:none;">
+        <button class="btn-md-green" id="payConfirmBtn">✓ Confirm Payment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HW Status Modal -->
+<div class="modal fade" id="hwModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:18px;border:none;">
+      <div class="modal-header" style="background:var(--pastel-teal);border:none;border-radius:18px 18px 0 0;">
+        <h6 class="modal-title fw-bold" id="hwModalTitle"></h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0" id="hwModalBody"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setDur(val) { document.getElementById('durationInput').value = val; }
+
+function getDuration() {
+  const val = parseFloat(document.getElementById('durationInput').value);
+  if (isNaN(val) || val <= 0) { showToast('❌ Enter a valid duration first', 'danger'); return null; }
+  return val;
+}
+
+function getClassTime() { return document.getElementById('classTimeInput').value.trim(); }
+
+function doStartScanner() {
+  const dur = getDuration(); if (dur === null) return;
+  startScanner(dur, getClassTime());
+}
+
+function logManual() {
+  const id = document.getElementById('manualId').value;
+  if (!id) { showToast('❌ Enter a student ID', 'danger'); return; }
+  const duration = getDuration(); if (duration === null) return;
+  const class_time = getClassTime();
+  fetch('/admin/log_session', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({student_id: id, duration: duration, class_time: class_time})
+  }).then(r=>r.json()).then(data => {
+    if (data.success) { showToast(`✅ ${data.name} · +${duration}h logged`, data.payment_due?'danger':'success'); setTimeout(()=>location.reload(),1600); }
+    else showToast('❌ '+(data.error||'Not found'),'danger');
+  });
+}
+
+// Payment with note modal
+let pendingPayId = null;
+function resetPayment(id, name) {
+  pendingPayId = id;
+  document.getElementById('payModalTitle').textContent = `Mark payment – ${name}`;
+  document.getElementById('payNote').value = '';
+  new bootstrap.Modal(document.getElementById('payModal')).show();
+}
+document.getElementById('payConfirmBtn').addEventListener('click', () => {
+  const note = document.getElementById('payNote').value;
+  bootstrap.Modal.getInstance(document.getElementById('payModal')).hide();
+  fetch(`/admin/reset_payment/${pendingPayId}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({note: note})
+  }).then(r=>r.json()).then(data => {
+    if (data.success) { showToast('✅ Payment recorded!','success'); setTimeout(()=>location.reload(),1200); }
+  });
+});
+
+function undoSession(id, name) {
+  if (!confirm(`Undo the LAST logged session for ${name}?`)) return;
+  fetch(`/admin/undo_session/${id}`,{method:'POST'}).then(r=>r.json()).then(data => {
+    if (data.success) { showToast(`↩ Undid ${data.undone}h for ${data.name}`,'info'); setTimeout(()=>location.reload(),1600); }
+    else showToast('❌ '+(data.error||'Error'),'danger');
+  });
+}
+
+function resetCycle(id, name) {
+  if (!confirm(`Reset cycle to ZERO for ${name}?`)) return;
+  fetch(`/admin/reset_cycle/${id}`,{method:'POST'}).then(r=>r.json()).then(data => {
+    if (data.success) { showToast(`🔄 Cycle reset for ${data.name}`,'success'); setTimeout(()=>location.reload(),1200); }
+  });
+}
+
+function deleteStudent(id, name) {
+  if (!confirm(`Delete ${name}? Cannot be undone.`)) return;
+  fetch(`/admin/delete_student/${id}`,{method:'POST'}).then(r=>r.json()).then(data => { if (data.success) location.reload(); });
+}
+
+function deleteHW(id) {
+  if (!confirm('Delete this homework?')) return;
+  fetch(`/admin/delete_homework/${id}`,{method:'POST'}).then(r=>r.json()).then(data => { if (data.success) document.getElementById('hw-'+id).remove(); });
+}
+
+function viewHWStatus(id) {
+  fetch(`/admin/homework_status/${id}`).then(r=>r.json()).then(data => {
+    document.getElementById('hwModalTitle').textContent = data.title;
+    let html = '';
+    data.statuses.forEach(s => {
+      html += `<div class="hw-item d-flex justify-content-between align-items-center">
+        <span style="font-size:0.86rem;">${s.name}</span>
+        <span class="${s.done?'badge-active':'badge-due'}">${s.done?'✓ Done'+(s.done_at?' '+s.done_at:''):'Pending'}</span>
+      </div>`;
+    });
+    document.getElementById('hwModalBody').innerHTML = html || '<div style="padding:20px;color:var(--md-muted);">No recipients.</div>';
+    new bootstrap.Modal(document.getElementById('hwModal')).show();
+  });
+}
+
+// Homework target
+function setTarget(val) {
+  document.getElementById('chip-all').classList.toggle('selected', val==='all');
+  document.getElementById('chip-selected').classList.toggle('selected', val==='selected');
+  document.getElementById('studentPickerWrap').style.display = val==='selected' ? 'block' : 'none';
+}
+
+function syncChip(checkbox) {
+  const label = checkbox.closest('label');
+  if (checkbox.checked) {
+    label.classList.add('selected');
+  } else {
+    label.classList.remove('selected');
+  }
+}
+
+// clicking the label toggles the hidden checkbox
+document.getElementById('studentPicker') && document.getElementById('studentPicker').addEventListener('click', function(e) {
+  const label = e.target.closest('label.student-chip');
+  if (!label) return;
+  const cb = label.querySelector('input[type=checkbox]');
+  if (!cb) return;
+  // Let the browser toggle the checkbox naturally via label, syncChip handles the class
+});
+
+// Validate homework form — ensure at least one student selected when targeted
+document.getElementById('hwForm').addEventListener('submit', function(e) {
+  if (document.getElementById('targetSelected').checked) {
+    const checked = document.querySelectorAll('#studentPicker input[type=checkbox]:checked');
+    if (checked.length === 0) {
+      e.preventDefault();
+      showToast('❌ Please select at least one student', 'danger');
+    }
+  }
+});
+
+// Schedule
+function addSchedule() {
+  const day = document.getElementById('schedDay').value;
+  const time_range = document.getElementById('schedTime').value.trim();
+  const student_id = document.getElementById('schedStudent').value || null;
+  if (!time_range) { showToast('❌ Enter a time range','danger'); return; }
+  fetch('/admin/add_schedule', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({day, time_range, student_id})
+  }).then(r=>r.json()).then(data => {
+    if (data.success) {
+      document.getElementById('noSchedule') && document.getElementById('noSchedule').remove();
+      const div = document.createElement('div');
+      div.id = 'sch-'+data.id;
+      div.className = 'd-flex justify-content-between align-items-center mb-2 p-2';
+      div.style.cssText = 'background:var(--pastel-teal);border-radius:10px;';
+      const studentLine = data.student_name
+        ? `<div style="font-size:0.73rem;color:#00695c;margin-top:2px;">👤 ${data.student_name}</div>`
+        : `<div style="font-size:0.73rem;color:var(--md-muted);margin-top:2px;">Open slot</div>`;
+      div.innerHTML = `<div><span style="font-size:0.85rem;"><strong>${data.day}</strong> · ${data.time_range}</span>${studentLine}</div>
+        <button class="btn-icon" style="color:#c62828;" onclick="deleteSchedule(${data.id})">🗑</button>`;
+      document.getElementById('scheduleList').appendChild(div);
+      document.getElementById('schedTime').value = '';
+      document.getElementById('schedStudent').value = '';
+      // Add to class time suggestion chips
+      addTimeSuggestion(data.day, data.time_range);
+      showToast('✅ Schedule added','success');
+    }
+  });
+}
+
+function addTimeSuggestion(day, time_range) {
+  const label = `${day.substring(0,3)} ${time_range}`;
+  const value = `${day} · ${time_range}`;
+  // Update datalist
+  const dl = document.getElementById('scheduleTimeOptions');
+  if (dl) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    dl.appendChild(opt);
+  }
+  // Add quick-tap chip
+  const wrap = document.getElementById('schedSuggestions');
+  if (wrap) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'dur-btn btn-icon';
+    btn.style.cssText = 'font-size:0.72rem;padding:3px 10px;';
+    btn.textContent = label;
+    btn.onclick = () => { document.getElementById('classTimeInput').value = value; };
+    wrap.appendChild(btn);
+  }
+}
+
+function deleteSchedule(id) {
+  fetch(`/admin/delete_schedule/${id}`,{method:'POST'}).then(r=>r.json()).then(data => {
+    if (data.success) document.getElementById('sch-'+id).remove();
+  });
+}
+</script>
+{% endblock %}

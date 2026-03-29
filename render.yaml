@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: sciversity
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py

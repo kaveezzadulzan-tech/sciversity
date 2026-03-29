@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Sciversity{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    :root {
+      --pastel-blue:   #b3d4f5;
+      --pastel-purple: #d4b8f0;
+      --pastel-green:  #b8f0d4;
+      --pastel-yellow: #f5e6b3;
+      --pastel-red:    #f5b8b8;
+      --pastel-teal:   #b8e8f0;
+      --md-primary:    #5c6bc0;
+      --md-primary-dk: #3949ab;
+      --md-surface:    #f4f3ff;
+      --md-card:       #ffffff;
+      --md-text:       #37474f;
+      --md-muted:      #90a4ae;
+      --md-border:     #e8eaf6;
+    }
+    * { font-family: 'Poppins', sans-serif; }
+    body { background: var(--md-surface); color: var(--md-text); }
+
+    .top-navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 10px 20px; box-shadow: 0 4px 20px rgba(102,126,234,0.3);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .brand { font-size: 1.3rem; font-weight: 800; color: white; letter-spacing: 1px; }
+    .brand span { color: #c5cae9; }
+    .nav-btn {
+      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+      color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.35); color: white; }
+
+    .md-card { background: var(--md-card); border-radius: 18px; box-shadow: 0 2px 14px rgba(0,0,0,0.06); border: none; overflow: hidden; }
+    .md-card-header { padding: 13px 18px; font-weight: 600; font-size: 0.92rem; display: flex; align-items: center; gap: 8px; }
+    .md-card-body { padding: 18px; }
+
+    .header-blue   { background: var(--pastel-blue);   color: #1a237e; }
+    .header-purple { background: var(--pastel-purple);  color: #4a148c; }
+    .header-green  { background: var(--pastel-green);   color: #1b5e20; }
+    .header-yellow { background: var(--pastel-yellow);  color: #e65100; }
+    .header-teal   { background: var(--pastel-teal);    color: #006064; }
+    .header-red    { background: var(--pastel-red);     color: #b71c1c; }
+    .header-grad   { background: linear-gradient(135deg,#667eea,#764ba2); color: white; }
+
+    .stat-chip { background: white; border-radius: 16px; padding: 14px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); text-align: center; }
+    .stat-chip .num { font-size: 1.9rem; font-weight: 800; }
+    .stat-chip .lbl { font-size: 0.68rem; color: var(--md-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    .btn-md-primary { background: linear-gradient(135deg,#667eea,#764ba2); color: white; border: none; border-radius: 10px; padding: 9px 18px; font-weight: 600; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(102,126,234,0.3); cursor: pointer; display: inline-block; }
+    .btn-md-primary:hover { opacity: 0.92; color: white; }
+    .btn-md-green  { background: linear-gradient(135deg,#56ab2f,#a8e063); color: white; border: none; border-radius: 10px; padding: 9px 18px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    .btn-md-yellow { background: linear-gradient(135deg,#f7971e,#ffd200); color: #5a3e00; border: none; border-radius: 10px; padding: 9px 18px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    .btn-md-red    { background: linear-gradient(135deg,#f85032,#e73827); color: white; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 0.78rem; cursor: pointer; }
+    .btn-md-outline { border: 2px solid var(--md-primary); color: var(--md-primary); border-radius: 10px; padding: 7px 14px; font-weight: 600; font-size: 0.82rem; background: transparent; cursor: pointer; }
+    .btn-icon { background: transparent; border: 1.5px solid var(--md-border); border-radius: 8px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; line-height: 1.6; }
+    .btn-icon:hover { background: var(--md-border); }
+
+    .hour-bar  { background: #e8eaf6; border-radius: 10px; height: 13px; overflow: hidden; }
+    .hour-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg,#667eea,#764ba2); transition: width 0.5s; }
+    .hour-fill.danger { background: linear-gradient(90deg,#f85032,#e73827); }
+
+    .badge-active { background: #e8f5e9; color: #2e7d32; border-radius: 20px; padding: 3px 10px; font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+    .badge-due    { background: #ffebee; color: #c62828; border-radius: 20px; padding: 3px 10px; font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+
+    .md-input { border-radius: 10px; border: 1.5px solid var(--md-border); padding: 9px 13px; font-size: 0.88rem; width: 100%; transition: border 0.2s; font-family: 'Poppins', sans-serif; }
+    .md-input:focus { border-color: var(--md-primary); box-shadow: 0 0 0 3px rgba(92,107,192,0.12); outline: none; }
+
+    .md-table thead th { background: #f0eeff; color: var(--md-primary-dk); font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.4px; border: none; padding: 11px 13px; }
+    .md-table tbody td { padding: 11px 13px; border-bottom: 1px solid var(--md-border); vertical-align: middle; font-size: 0.86rem; }
+    .md-table tbody tr:last-child td { border-bottom: none; }
+    .md-table tbody tr.row-danger { background: #fff5f5; }
+
+    .hw-item { padding: 13px 18px; border-bottom: 1px solid var(--md-border); }
+    .hw-item:last-child { border-bottom: none; }
+
+    .student-chip { display: inline-flex; align-items: center; background: #f0eeff; border: 1.5px solid var(--md-border); border-radius: 20px; padding: 5px 13px; font-size: 0.82rem; cursor: pointer; margin: 3px; transition: all 0.15s; user-select: none; }
+    .student-chip.selected { background: var(--pastel-purple); border-color: #9c27b0; color: #4a148c; font-weight: 600; }
+
+    .md-toast { position: fixed; bottom: 20px; right: 20px; z-index: 9999; min-width: 270px; border-radius: 14px; padding: 13px 18px; color: white; font-weight: 500; font-size: 0.88rem; box-shadow: 0 8px 24px rgba(0,0,0,0.18); display: none; }
+    .flash-wrap { position: fixed; top: 70px; right: 14px; z-index: 9000; min-width: 270px; }
+
+    /* QR Scanner overlay */
+    #scanOverlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+      z-index: 2000; flex-direction: column; align-items: center; justify-content: center;
+    }
+    #scanOverlay.active { display: flex; }
+    #scanVideo { width: min(340px, 90vw); border-radius: 14px; }
+    #scanCanvas { display: none; }
+    .scan-frame {
+      position: relative; width: min(340px, 90vw); border-radius: 14px; overflow: hidden;
+    }
+    .scan-corner {
+      position: absolute; width: 40px; height: 40px; border-color: #a8e063; border-style: solid;
+    }
+    .scan-corner.tl { top: 10px; left: 10px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+    .scan-corner.tr { top: 10px; right: 10px; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
+    .scan-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
+    .scan-corner.br { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+
+    footer { text-align: center; color: var(--md-muted); font-size: 0.75rem; padding: 28px 0 14px; }
+
+    @media(max-width:576px) {
+      .md-card-body { padding: 13px; }
+      .stat-chip .num { font-size: 1.5rem; }
+      .md-table thead th, .md-table tbody td { padding: 9px 9px; font-size: 0.8rem; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<div class="top-navbar">
+  <div class="brand">Sci<span>versity</span></div>
+  <div class="d-flex align-items-center gap-2">
+    {% block nav_links %}{% endblock %}
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap">
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }} alert-dismissible fade show shadow-sm rounded-3" style="font-size:0.88rem;">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- QR Scanner Overlay (works on mobile) -->
+<div id="scanOverlay">
+  <div style="color:white; font-size:1rem; font-weight:600; margin-bottom:14px;">Point camera at QR code</div>
+  <div class="scan-frame">
+    <video id="scanVideo" autoplay playsinline muted></video>
+    <div class="scan-corner tl"></div>
+    <div class="scan-corner tr"></div>
+    <div class="scan-corner bl"></div>
+    <div class="scan-corner br"></div>
+  </div>
+  <canvas id="scanCanvas"></canvas>
+  <div id="scanStatus" style="color:#a8e063; margin-top:14px; font-size:0.88rem;">Scanning…</div>
+  <button onclick="stopScanner()" style="margin-top:18px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; border-radius:20px; padding:8px 24px; cursor:pointer;">Cancel</button>
+</div>
+
+<div class="container-fluid px-3 px-md-4 py-3">
+  {% block content %}{% endblock %}
+</div>
+
+<div class="md-toast" id="mdToast"></div>
+
+<footer>© 2026 Sciversity · Attendance & Finance Portal</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jsQR for QR decoding -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+function showToast(msg, type) {
+  const t = document.getElementById('mdToast');
+  t.style.background = type === 'success' ? 'linear-gradient(135deg,#56ab2f,#a8e063)' :
+                       type === 'danger'  ? 'linear-gradient(135deg,#f85032,#e73827)' :
+                                            'linear-gradient(135deg,#667eea,#764ba2)';
+  t.innerHTML = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3800);
+}
+
+// ── QR Scanner ──────────────────────────────────────────────────────────────
+let scanStream = null;
+let scanAnimFrame = null;
+let scanDuration = 1.0;
+let scanClassTime = "";
+
+function startScanner(duration, classTime) {
+  scanDuration = duration;
+  scanClassTime = classTime || "";
+  const overlay = document.getElementById('scanOverlay');
+  overlay.classList.add('active');
+  document.getElementById('scanStatus').textContent = 'Starting camera…';
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+  }).then(stream => {
+    scanStream = stream;
+    const video = document.getElementById('scanVideo');
+    video.srcObject = stream;
+    video.play();
+    video.addEventListener('loadedmetadata', () => {
+      document.getElementById('scanStatus').textContent = 'Scanning…';
+      scanLoop();
+    });
+  }).catch(err => {
+    document.getElementById('scanStatus').textContent = 'Camera error: ' + err.message;
+  });
+}
+
+function scanLoop() {
+  const video = document.getElementById('scanVideo');
+  const canvas = document.getElementById('scanCanvas');
+  if (!scanStream || video.readyState < 2) { scanAnimFrame = requestAnimationFrame(scanLoop); return; }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+  if (code) {
+    stopScanner();
+    processQR(code.data);
+  } else {
+    scanAnimFrame = requestAnimationFrame(scanLoop);
+  }
+}
+
+function stopScanner() {
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
+  document.getElementById('scanOverlay').classList.remove('active');
+}
+
+function processQR(qrData) {
+  fetch('/api/scan', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({qr_data: qrData, duration: scanDuration, class_time: scanClassTime})
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      showToast(`✅ ${data.name} · +${scanDuration}h logged · Balance: ${data.balance}h ${data.payment_due ? '⚠ PAYMENT DUE' : ''}`, data.payment_due ? 'danger' : 'success');
+      setTimeout(() => location.reload(), 2000);
+    } else {
+      showToast('❌ ' + (data.error || 'Scan error'), 'danger');
+    }
+  });
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

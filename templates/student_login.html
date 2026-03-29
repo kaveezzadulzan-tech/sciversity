@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Student Login – Sciversity{% endblock %}
+{% block content %}
+<div class="row justify-content-center" style="margin-top:60px;">
+  <div class="col-md-5 col-lg-4">
+    <div class="md-card">
+      <div class="md-card-header header-teal justify-content-center flex-column text-center py-4">
+        <div class="brand" style="font-size:1.6rem;">Sci<span>versity</span></div>
+        <div style="font-size:0.85rem; opacity:0.75; margin-top:4px;">Student Portal</div>
+      </div>
+      <div class="md-card-body pt-4">
+        <form method="POST">
+          <div class="mb-3">
+            <label style="font-size:0.85rem; font-weight:600;">Email</label>
+            <input type="email" name="email" class="md-input mt-1" placeholder="your@email.com" required/>
+          </div>
+          <div class="mb-4">
+            <label style="font-size:0.85rem; font-weight:600;">Password</label>
+            <input type="password" name="password" class="md-input mt-1" placeholder="••••••••" required/>
+          </div>
+          <button type="submit" class="btn-md-primary w-100 py-2" style="border-radius:12px; font-size:0.95rem;">Login</button>
+        </form>
+        <div class="text-center mt-3">
+          <a href="{{ url_for('admin_login') }}" style="color:var(--md-muted); font-size:0.82rem;">Admin Login →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

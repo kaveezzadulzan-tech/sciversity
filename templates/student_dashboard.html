@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard – Sciversity{% endblock %}
+
+{% block nav_links %}
+<span style="color:rgba(255,255,255,0.75); font-size:0.82rem;" class="d-none d-sm-inline">{{ student.name }}</span>
+<a href="{{ url_for('student_logout') }}" class="nav-btn">Logout</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Payment Alert -->
+{% if student.payment_due %}
+<div style="background:linear-gradient(135deg,#f85032,#e73827); color:white; border-radius:14px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; gap:14px; box-shadow:0 4px 16px rgba(248,80,50,0.3);">
+  <span class="material-icons" style="font-size:2rem;">warning</span>
+  <div>
+    <div style="font-weight:700; font-size:1rem;">Payment Due!</div>
+    <div style="font-size:0.85rem; opacity:0.9;">You've completed an 8-hour block. Please settle your payment to continue.</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Top Cards Row -->
+<div class="row g-3 mb-4">
+
+  <!-- Hour Meter -->
+  <div class="col-md-7">
+    <div class="md-card h-100">
+      <div class="md-card-header header-purple">
+        <span class="material-icons" style="font-size:1.1rem;">timer</span>
+        My 8-Hour Cycle
+      </div>
+      <div class="md-card-body">
+        <div style="font-size:0.82rem; color:var(--md-muted); margin-bottom:6px;">Hours completed this cycle</div>
+        <div style="font-size:2.2rem; font-weight:800; color:{{ '#ef5350' if student.payment_due else 'var(--md-primary)' }}; line-height:1.1;">
+          {{ "%.1f"|format(student.cycle_hours) }}
+          <span style="font-size:1rem; font-weight:500; color:var(--md-muted);">/ 8 hrs</span>
+        </div>
+        <div class="hour-bar mt-2 mb-3" style="height:18px;">
+          <div class="hour-fill {{ 'danger' if student.payment_due else '' }}"
+               style="width:{{ [(student.cycle_hours/8*100),100]|min }}%;"></div>
+        </div>
+        <div class="row g-2 text-center">
+          <div class="col-4">
+            <div style="background:var(--pastel-blue); border-radius:12px; padding:10px 6px;">
+              <div style="font-weight:800; color:#1a237e;">{{ "%.1f"|format(student.hours_logged) }}h</div>
+              <div style="font-size:0.68rem; color:#5c7a9e; font-weight:600; text-transform:uppercase;">Total Logged</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div style="background:var(--pastel-green); border-radius:12px; padding:10px 6px;">
+              <div style="font-weight:800; color:#1b5e20;">{{ "%.1f"|format(student.hours_paid) }}h</div>
+              <div style="font-size:0.68rem; color:#2e7d32; font-weight:600; text-transform:uppercase;">Hours Paid</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div style="background:{{ 'var(--pastel-red)' if student.payment_due else 'var(--pastel-green)' }}; border-radius:12px; padding:10px 6px;">
+              <div style="font-weight:800; color:{{ '#c62828' if student.payment_due else '#1b5e20' }};">
+                {{ '⚠ Due' if student.payment_due else '✓ OK' }}
+              </div>
+              <div style="font-size:0.68rem; font-weight:600; text-transform:uppercase; color:{{ '#c62828' if student.payment_due else '#2e7d32' }};">Status</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Homework Summary -->
+  <div class="col-md-5">
+    <div class="md-card h-100 d-flex flex-column justify-content-center" style="text-align:center;">
+      {% set pending = hw_data|rejectattr('done')|list|length %}
+      <div class="md-card-body">
+        {% if pending > 0 %}
+          <div style="font-size:3rem; font-weight:900; color:#ffa726; line-height:1;">{{ pending }}</div>
+          <div style="font-weight:600; margin-top:4px;">Task{{ 's' if pending>1 else '' }} Pending</div>
+          <div style="font-size:0.8rem; color:var(--md-muted); margin-top:6px;">Scroll down to complete them</div>
+        {% else %}
+          <div style="font-size:3rem;">🎉</div>
+          <div style="font-weight:700; margin-top:8px;">All caught up!</div>
+          <div style="font-size:0.82rem; color:var(--md-muted);">No pending homework</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Homework -->
+<div class="md-card mb-4">
+  <div class="md-card-header header-yellow">
+    <span class="material-icons" style="font-size:1.1rem;">notifications</span>
+    Homework Notification Center
+  </div>
+  {% if hw_data %}
+    {% for item in hw_data %}
+    <div class="hw-item {{ 'opacity-50' if item.done else '' }}" id="hw-item-{{ item.status_id }}">
+      <div class="d-flex justify-content-between align-items-start gap-3">
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:0.9rem; {{ 'text-decoration:line-through; color:var(--md-muted);' if item.done else '' }}">
+            {{ item.hw.title }}
+          </div>
+          {% if item.hw.description %}
+            <div style="font-size:0.8rem; color:var(--md-muted);">{{ item.hw.description }}</div>
+          {% endif %}
+          <div style="font-size:0.75rem; color:var(--md-muted); margin-top:4px;">
+            Posted {{ item.hw.posted_at.strftime('%d %b %Y') }}
+          </div>
+        </div>
+        <div class="flex-shrink-0">
+          {% if item.done %}
+            <span class="badge-active">✓ Done</span>
+          {% else %}
+            <button class="btn-md-green" style="padding:7px 14px; font-size:0.8rem; border-radius:8px;"
+                    onclick="markDone({{ item.status_id }})">
+              Mark Done
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center; color:var(--md-muted); padding:30px; font-size:0.88rem;">No homework posted yet.</div>
+  {% endif %}
+</div>
+
+<!-- Attendance Log -->
+<div class="md-card">
+  <div class="md-card-header header-teal">
+    <span class="material-icons" style="font-size:1.1rem;">calendar_today</span>
+    Attendance Log
+  </div>
+  {% if sessions %}
+  <div style="overflow-x:auto;">
+    <table class="md-table w-100">
+      <thead>
+        <tr><th>#</th><th>Date</th><th>Class Time</th><th>Duration</th></tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr>
+          <td style="color:var(--md-muted); font-size:0.8rem;">{{ loop.index }}</td>
+          <td style="font-weight:500;">{{ s.date.strftime('%d %b %Y') }}</td>
+          <td style="color:var(--md-muted); font-size:0.82rem;">{{ s.class_time or '—' }}</td>
+          <td>
+            <span style="background:var(--pastel-blue); color:#1a237e; border-radius:20px; padding:3px 12px; font-size:0.8rem; font-weight:600;">
+              {{ s.duration }}h
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div style="text-align:center; color:var(--md-muted); padding:30px; font-size:0.88rem;">No sessions recorded yet.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markDone(statusId) {
+  fetch(`/student/mark_done/${statusId}`, {method:'POST'})
+  .then(r=>r.json()).then(data => {
+    if (data.success) {
+      const item = document.getElementById('hw-item-'+statusId);
+      item.classList.add('opacity-50');
+      const btn = item.querySelector('button');
+      if (btn) btn.outerHTML = '<span class="badge-active">✓ Done</span>';
+      const title = item.querySelector('[style*="font-weight:600"]');
+      if (title) title.style.textDecoration = 'line-through';
+    }
+  });
+}
+</script>
+{% endblock %}
